@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--  Requires that the environment variable NETLOGO_HOME is set to the directory containing the NetLogo installation
+-->
+
+<project name="population-manager" default="run" basedir=".">
+
+    <property name="build" location="pm-build"/>
+    <property name="comp-build" location="comp-build"/>
+    <property name="src" location="pm-src"/>
+    <property name="comp-src" location="comp-src"/>
+    <property name="classes" location="${build}/classes"/>
+    <property name="comp-classes" location="${comp-build}/classes"/>
+    <property name="lib" location="lib"/>
+    <property name="extension" value="${ant.project.name}"/>
+    <property name="comp-extension" value="comp"/>
+    <property name="classman" value="PopulationManagerExtension"/>
+    <property name="comp-classman" value="ComplexityComputerExtension"/>
+    <property environment="env"/>
+    <property name="netlogodir" location="${env.NETLOGO_HOME}"/>
+    <property name="netlogo" location="${netlogodir}/NetLogo.jar"/>
+    <first id="model">
+        <fileset dir="." includes="**/*.nlogo"/>
+    </first>
+    <first id="model-2p">
+        <fileset dir="." includes="**/*2P.nlogo"/>
+    </first>
+
+    <target name="comp" description="Build the complexity analysis extension">
+        <mkdir dir="${comp-classes}"/>
+        <mkdir dir="${comp-extension}"/>
+        <javac srcdir="${comp-src}"
+            destdir="${comp-classes}"
+            includes="*.java"
+            debug="true"
+            includeantruntime="false">
+            <classpath>
+                <fileset file="${netlogo}"/>
+                <fileset dir="${netlogodir}/lib" includes="**/*.jar"/>
+            </classpath>
+        </javac>
+        <jar destfile="${comp-extension}/${comp-extension}.jar" basedir="${comp-classes}">
+            <manifest>
+                <attribute name="Extension-Name" value="${comp-extension}"/>
+                <attribute name="Class-Manager" value="${comp-classman}"/>
+                <attribute name="NetLogo-Extension-API-Version" value="5.0"/>
+            </manifest>
+        </jar>
+    </target>
+    
+    <target name="build" depends="comp" description="Build the population-manager and set up structure">
+        <mkdir dir="${classes}"/>
+        <mkdir dir="${extension}"/>
+        <javac srcdir="${src}" 
+            destdir="${classes}" 
+            includes="*.java" 
+            debug="true"
+            includeantruntime="false">
+            <classpath>
+                <fileset file="${netlogo}"/>
+                <fileset dir="${netlogodir}/lib" includes="**/*.jar"/>
+            </classpath>
+        </javac>
+        <jar destfile="${extension}/${extension}.jar" basedir="${classes}">
+            <manifest>
+                <attribute name="Extension-Name" value="${extension}"/>
+                <attribute name="Class-Manager" value="${classman}"/>
+                <attribute name="NetLogo-Extension-API-Version" value="5.0"/>
+            </manifest>
+        </jar>
+    </target>
+    
+    <target name="clean" description="Remove all built files and directories">
+        <delete dir="${build}"/>
+        <delete dir="${extension}"/>
+        <delete dir="${comp-build}"/>
+        <delete dir="${comp-extension}"/>
+    </target>
+    
+    <target name="run" depends="build" description="Run the model in NetLogo">
+        <java jar="${netlogo}" fork="true" spawn="true">
+            <arg value="&quot;${toString:model}&quot;"/>
+        </java>
+    </target>
+    
+    <target name="run-cl" depends="build" description="Run the model in NetLogo with the command line">
+        <java jar="${netlogo}" fork="true">
+            <arg value="&quot;${toString:model}&quot;"/>
+        </java>
+    </target>
+    
+    <target name="run-unbuilt" description="Run the model without building the extension">
+        <java jar="${netlogo}" fork="true" spawn="true">
+            <arg value="&quot;${toString:model}&quot;"/>
+        </java>
+    </target>
+
+</project>
